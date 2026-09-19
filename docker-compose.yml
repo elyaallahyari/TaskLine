@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: taskline-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: taskline
+      POSTGRES_PASSWORD: taskline
+      POSTGRES_DB: taskline
+    volumes:
+      - taskline_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskline -d taskline"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  taskline_pg:

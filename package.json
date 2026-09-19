@@ -1,0 +1,13 @@
+{
+  "name": "taskline",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n api,web -c teal,blue \"npm run start:dev --prefix api\" \"npm run dev --prefix web\"",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:setup": "npm run prisma:migrate --prefix api && npm run prisma:seed --prefix api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
