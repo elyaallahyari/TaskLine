@@ -1,61 +1,61 @@
-"use client";
+'use client'
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import Link from "next/link";
-import { useState } from "react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
-import type { BoardSummary, Task } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { format } from 'date-fns'
+import Link from 'next/link'
+import { useState } from 'react'
+import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import type { BoardSummary, Task } from '@/lib/types'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
 
   const boards = useQuery({
-    queryKey: ["boards"],
-    queryFn: () => api<BoardSummary[]>("/boards"),
-    enabled: Boolean(user),
-  });
+    queryKey: ['boards'],
+    queryFn: () => api<BoardSummary[]>('/boards'),
+    enabled: Boolean(user)
+  })
   const tasks = useQuery({
-    queryKey: ["tasks"],
-    queryFn: () => api<Task[]>("/tasks"),
-    enabled: Boolean(user),
-  });
+    queryKey: ['tasks'],
+    queryFn: () => api<Task[]>('/tasks'),
+    enabled: Boolean(user)
+  })
 
   const createBoard = useMutation({
     mutationFn: () =>
-      api("/boards", {
-        method: "POST",
-        body: JSON.stringify({ name, description }),
+      api('/boards', {
+        method: 'POST',
+        body: JSON.stringify({ name, description })
       }),
     onSuccess: () => {
-      setOpen(false);
-      setName("");
-      setDescription("");
-      queryClient.invalidateQueries({ queryKey: ["boards"] });
-    },
-  });
+      setOpen(false)
+      setName('')
+      setDescription('')
+      queryClient.invalidateQueries({ queryKey: ['boards'] })
+    }
+  })
 
   const upcoming = (tasks.data ?? [])
     .filter((task) => task.dueDate)
     .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-    .slice(0, 6);
+    .slice(0, 6)
 
   return (
     <div className="mx-auto max-w-5xl px-8 py-8">
@@ -71,20 +71,20 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardDescription>Boards</CardDescription>
-            <CardTitle className="text-3xl">{boards.data?.length ?? "—"}</CardTitle>
+            <CardTitle className="text-3xl">{boards.data?.length ?? '—'}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
             <CardDescription>Open tasks</CardDescription>
-            <CardTitle className="text-3xl">{tasks.data?.length ?? "—"}</CardTitle>
+            <CardTitle className="text-3xl">{tasks.data?.length ?? '—'}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
             <CardDescription>With dates</CardDescription>
             <CardTitle className="text-3xl">
-              {tasks.data?.filter((task) => task.dueDate || task.startDate).length ?? "—"}
+              {tasks.data?.filter((task) => task.dueDate || task.startDate).length ?? '—'}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -104,7 +104,7 @@ export default function DashboardPage() {
                 <Card className="h-full transition-colors hover:border-primary/30">
                   <CardHeader>
                     <CardTitle>{board.name}</CardTitle>
-                    <CardDescription>{board.description || "No description"}</CardDescription>
+                    <CardDescription>{board.description || 'No description'}</CardDescription>
                   </CardHeader>
                   <CardContent className="text-xs text-muted-foreground">
                     {board._count.tasks} tasks · {board._count.columns} lists
@@ -125,7 +125,7 @@ export default function DashboardPage() {
                   <div key={task.id} className="px-5 py-3">
                     <p className="text-sm font-medium">{task.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {task.board?.name} · {format(new Date(task.dueDate!), "MMM d")}
+                      {task.board?.name} · {format(new Date(task.dueDate!), 'MMM d')}
                     </p>
                   </div>
                 ))
@@ -139,13 +139,15 @@ export default function DashboardPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New board</DialogTitle>
-            <DialogDescription>Lists for To do, In progress, and Done are added for you.</DialogDescription>
+            <DialogDescription>
+              Lists for To do, In progress, and Done are added for you.
+            </DialogDescription>
           </DialogHeader>
           <form
             className="space-y-3"
             onSubmit={(event) => {
-              event.preventDefault();
-              createBoard.mutate();
+              event.preventDefault()
+              createBoard.mutate()
             }}
           >
             <div className="space-y-1.5">
@@ -174,5 +176,5 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }
