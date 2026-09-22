@@ -1,49 +1,44 @@
-"use client";
+'use client'
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { useState } from "react";
-import { api } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
-import type { BoardSummary } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import Link from 'next/link'
+import { useState } from 'react'
+import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import type { BoardSummary } from '@/lib/types'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 export default function BoardsPage() {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
 
   const boards = useQuery({
-    queryKey: ["boards"],
-    queryFn: () => api<BoardSummary[]>("/boards"),
-    enabled: Boolean(user),
-  });
+    queryKey: ['boards'],
+    queryFn: () => api<BoardSummary[]>('/boards'),
+    enabled: Boolean(user)
+  })
 
   const createBoard = useMutation({
     mutationFn: () =>
-      api("/boards", {
-        method: "POST",
-        body: JSON.stringify({ name, description }),
+      api('/boards', {
+        method: 'POST',
+        body: JSON.stringify({ name, description })
       }),
     onSuccess: () => {
-      setOpen(false);
-      setName("");
-      setDescription("");
-      queryClient.invalidateQueries({ queryKey: ["boards"] });
-    },
-  });
+      setOpen(false)
+      setName('')
+      setDescription('')
+      queryClient.invalidateQueries({ queryKey: ['boards'] })
+    }
+  })
 
   return (
     <div className="px-8 py-8">
@@ -57,7 +52,7 @@ export default function BoardsPage() {
             <Card className="h-full hover:border-primary/30">
               <CardHeader>
                 <CardTitle>{board.name}</CardTitle>
-                <CardDescription>{board.description || "No description"}</CardDescription>
+                <CardDescription>{board.description || 'No description'}</CardDescription>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground">
                 {board._count.tasks} tasks
@@ -75,8 +70,8 @@ export default function BoardsPage() {
           <form
             className="space-y-3"
             onSubmit={(event) => {
-              event.preventDefault();
-              createBoard.mutate();
+              event.preventDefault()
+              createBoard.mutate()
             }}
           >
             <div className="space-y-1.5">
@@ -98,5 +93,5 @@ export default function BoardsPage() {
         </DialogContent>
       </Dialog>
     </div>
-  );
+  )
 }
