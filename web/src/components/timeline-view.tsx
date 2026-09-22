@@ -70,9 +70,7 @@ export function TimelineView({ tasks }: { tasks: Task[] }) {
           <div className="relative flex" style={{ width: days.length * DAY_WIDTH }}>
             {days.map((day) => {
               const isToday = differenceInCalendarDays(day, today) === 0
-
               const isPast = day < today
-
               const isWeekend = day.getDay() === 0 || day.getDay() === 6
 
               return (
@@ -80,18 +78,13 @@ export function TimelineView({ tasks }: { tasks: Task[] }) {
                   key={day.toISOString()}
                   className={cn(
                     'w-9 shrink-0 border-r border-border/70 py-2 text-center text-[10px] transition-colors',
-
                     isPast && 'bg-muted/35 text-muted-foreground',
-
                     isToday && 'bg-primary/6 text-foreground',
-
                     !isPast && !isToday && !isWeekend && 'bg-background text-muted-foreground',
-
                     isWeekend && !isToday && 'bg-muted/50 text-muted-foreground'
                   )}
                 >
                   <div>{format(day, 'EEEEE')}</div>
-
                   <div className={cn('font-medium', isToday && 'text-primary')}>
                     {format(day, 'd')}
                   </div>
@@ -111,8 +104,18 @@ export function TimelineView({ tasks }: { tasks: Task[] }) {
               const span = rangeFor(task, today)
 
               const offset = differenceInCalendarDays(span.start, start)
-
               const length = Math.max(1, differenceInCalendarDays(span.end, span.start) + 1)
+
+              const barDays = Array.from({ length }, (_, i) => {
+                const day = addDays(span.start, i)
+                const diff = differenceInCalendarDays(day, today)
+                return {
+                  key: day.toISOString(),
+                  isPast: diff < 0,
+                  isToday: diff === 0,
+                  isFuture: diff > 0
+                }
+              })
 
               return (
                 <div key={task.id} className="flex border-b border-border last:border-b-0">
@@ -129,9 +132,7 @@ export function TimelineView({ tasks }: { tasks: Task[] }) {
                     <div className="absolute inset-0 flex">
                       {days.map((day) => {
                         const isToday = differenceInCalendarDays(day, today) === 0
-
                         const isPast = day < today
-
                         const isWeekend = day.getDay() === 0 || day.getDay() === 6
 
                         return (
@@ -139,11 +140,8 @@ export function TimelineView({ tasks }: { tasks: Task[] }) {
                             key={day.toISOString()}
                             className={cn(
                               'h-full w-9 shrink-0 border-r border-border/50',
-
                               isPast && 'bg-muted/25',
-
                               isToday && 'bg-primary/4',
-
                               isWeekend && !isToday && 'bg-muted/30'
                             )}
                           />
@@ -152,7 +150,7 @@ export function TimelineView({ tasks }: { tasks: Task[] }) {
                     </div>
 
                     <div
-                      className="absolute top-3 h-6 rounded-full bg-primary/85 px-2 text-[11px] leading-6 text-primary-foreground shadow-sm"
+                      className="absolute top-3 h-6 overflow-hidden rounded-full text-[11px] leading-6 text-primary-foreground shadow-sm"
                       style={{
                         left: offset * DAY_WIDTH + 4,
                         width: length * DAY_WIDTH - 8
@@ -162,7 +160,21 @@ export function TimelineView({ tasks }: { tasks: Task[] }) {
                         'MMM d'
                       )} – ${format(span.end, 'MMM d')}`}
                     >
-                      <span className="block truncate">{task.title}</span>
+                      <div className="absolute inset-0 flex">
+                        {barDays.map((d) => (
+                          <div
+                            key={d.key}
+                            className={cn(
+                              'h-full flex-1',
+                              d.isPast && 'bg-primary/35',
+                              d.isToday && 'bg-primary/85',
+                              d.isFuture && 'bg-primary'
+                            )}
+                          />
+                        ))}
+                      </div>
+
+                      <span className="relative block truncate px-2">{task.title}</span>
                     </div>
                   </div>
                 </div>
