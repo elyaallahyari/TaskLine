@@ -1,22 +1,22 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Logo } from "@/components/logo";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/auth";
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { Logo } from '@/components/logo'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAuth } from '@/lib/auth'
 
 export default function RegisterPage() {
-  const { register } = useAuth();
-  const router = useRouter();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const { register } = useAuth()
+  const router = useRouter()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
@@ -26,16 +26,16 @@ export default function RegisterPage() {
       <form
         className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6"
         onSubmit={async (event) => {
-          event.preventDefault();
-          setPending(true);
-          setError("");
+          event.preventDefault()
+          setPending(true)
+          setError('')
           try {
-            await register(name, email, password);
-            router.push("/app");
+            await register(name, email, password)
+            router.push('/app')
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Could not register");
+            setError(err instanceof Error ? err.message : 'Could not register')
           } finally {
-            setPending(false);
+            setPending(false)
           }
         }}
       >
@@ -76,15 +76,15 @@ export default function RegisterPage() {
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <Button className="w-full" type="submit" disabled={pending}>
-          {pending ? "Creating…" : "Get started"}
+          {pending ? 'Creating…' : 'Get started'}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
-          Already here?{" "}
+          Already here?{' '}
           <Link href="/login" className="text-foreground underline">
             Log in
           </Link>
         </p>
       </form>
     </div>
-  );
+  )
 }
