@@ -1,21 +1,21 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Logo } from "@/components/logo";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/lib/auth";
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { Logo } from '@/components/logo'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAuth } from '@/lib/auth'
 
 export default function LoginPage() {
-  const { login } = useAuth();
-  const router = useRouter();
-  const [email, setEmail] = useState("demo@taskline.app");
-  const [password, setPassword] = useState("demo1234");
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const { login } = useAuth()
+  const router = useRouter()
+  const [email, setEmail] = useState('demo@taskline.app')
+  const [password, setPassword] = useState('demo1234')
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
@@ -25,16 +25,16 @@ export default function LoginPage() {
       <form
         className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6"
         onSubmit={async (event) => {
-          event.preventDefault();
-          setPending(true);
-          setError("");
+          event.preventDefault()
+          setPending(true)
+          setError('')
           try {
-            await login(email, password);
-            router.push("/app");
+            await login(email, password)
+            router.push('/app')
           } catch (err) {
-            setError(err instanceof Error ? err.message : "Could not log in");
+            setError(err instanceof Error ? err.message : 'Could not log in')
           } finally {
-            setPending(false);
+            setPending(false)
           }
         }}
       >
@@ -65,15 +65,15 @@ export default function LoginPage() {
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
         <Button className="w-full" type="submit" disabled={pending}>
-          {pending ? "Signing in…" : "Log in"}
+          {pending ? 'Signing in…' : 'Log in'}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
-          No account?{" "}
+          No account?{' '}
           <Link href="/register" className="text-foreground underline">
             Create one
           </Link>
         </p>
       </form>
     </div>
-  );
+  )
 }
