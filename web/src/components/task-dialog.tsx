@@ -1,48 +1,48 @@
-"use client";
+'use client'
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { useState } from "react";
-import { api } from "@/lib/api";
-import type { Priority, Task } from "@/lib/types";
-import { Button } from "@/components/ui/button";
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { format } from 'date-fns'
+import { useState } from 'react'
+import { api } from '@/lib/api'
+import type { Priority, Task } from '@/lib/types'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+  DialogTitle
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 const empty = {
-  title: "",
-  description: "",
-  priority: "MEDIUM" as Priority,
-  startDate: "",
-  dueDate: "",
-};
+  title: '',
+  description: '',
+  priority: 'MEDIUM' as Priority,
+  startDate: '',
+  dueDate: ''
+}
 
 export function TaskDialog({
   open,
   onOpenChange,
   boardId,
   columnId,
-  task,
+  task
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  boardId: string;
-  columnId?: string;
-  task?: Task | null;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  boardId: string
+  columnId?: string
+  task?: Task | null
 }) {
-  const queryClient = useQueryClient();
-  const [form, setForm] = useState(empty);
-  const [error, setError] = useState("");
+  const queryClient = useQueryClient()
+  const [form, setForm] = useState(empty)
+  const [error, setError] = useState('')
 
-  const isEdit = Boolean(task);
+  const isEdit = Boolean(task)
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -52,57 +52,50 @@ export function TaskDialog({
         priority: form.priority,
         startDate: form.startDate || null,
         dueDate: form.dueDate || null,
-        columnId,
-      };
+        columnId
+      }
       if (task) {
         return api(`/tasks/${task.id}`, {
-          method: "PATCH",
-          body: JSON.stringify(payload),
-        });
+          method: 'PATCH',
+          body: JSON.stringify(payload)
+        })
       }
       return api(`/boards/${boardId}/tasks`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
     },
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["board", boardId] }),
-        queryClient.invalidateQueries({ queryKey: ["tasks"] }),
-        queryClient.invalidateQueries({ queryKey: ["boards"] }),
-      ]);
-      onOpenChange(false);
+        queryClient.invalidateQueries({ queryKey: ['board', boardId] }),
+        queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+        queryClient.invalidateQueries({ queryKey: ['boards'] })
+      ])
+      onOpenChange(false)
     },
-    onError: (err: Error) => setError(err.message),
-  });
+    onError: (err: Error) => setError(err.message)
+  })
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         onOpenAutoFocus={() => {
-          setError("");
+          setError('')
           setForm(
             task
               ? {
                   title: task.title,
                   description: task.description,
                   priority: task.priority,
-                  startDate: task.startDate
-                    ? format(new Date(task.startDate), "yyyy-MM-dd")
-                    : "",
-                  dueDate: task.dueDate
-                    ? format(new Date(task.dueDate), "yyyy-MM-dd")
-                    : "",
+                  startDate: task.startDate ? format(new Date(task.startDate), 'yyyy-MM-dd') : '',
+                  dueDate: task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : ''
                 }
-              : empty,
-          );
+              : empty
+          )
         }}
       >
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit task" : "New task"}</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit task' : 'New task'}</DialogTitle>
           <DialogDescription>
             Dates show up on the calendar and as a bar on the timeline.
           </DialogDescription>
@@ -110,8 +103,8 @@ export function TaskDialog({
         <form
           className="space-y-3"
           onSubmit={(event) => {
-            event.preventDefault();
-            mutation.mutate();
+            event.preventDefault()
+            mutation.mutate()
           }}
         >
           <div className="space-y-1.5">
@@ -128,9 +121,7 @@ export function TaskDialog({
             <Textarea
               id="description"
               value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -159,9 +150,7 @@ export function TaskDialog({
               id="priority"
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
               value={form.priority}
-              onChange={(e) =>
-                setForm({ ...form, priority: e.target.value as Priority })
-              }
+              onChange={(e) => setForm({ ...form, priority: e.target.value as Priority })}
             >
               <option value="LOW">Low</option>
               <option value="MEDIUM">Medium</option>
@@ -175,11 +164,11 @@ export function TaskDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={mutation.isPending || !form.title}>
-              {mutation.isPending ? "Saving…" : "Save"}
+              {mutation.isPending ? 'Saving…' : 'Save'}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }
