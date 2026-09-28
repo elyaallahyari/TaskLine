@@ -1,42 +1,36 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  CalendarDays,
-  KanbanSquare,
-  LayoutDashboard,
-  LogOut,
-  GanttChart,
-} from "lucide-react";
-import { Logo } from "@/components/logo";
-import { useAuth } from "@/lib/auth";
-import { cn, initials } from "@/lib/utils";
-import { useEffect } from "react";
-import type { ReactNode } from "react";
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { CalendarDays, KanbanSquare, LayoutDashboard, LogOut, GanttChart } from 'lucide-react'
+import { Logo } from '@/components/logo'
+import { useAuth } from '@/lib/auth'
+import { cn, initials } from '@/lib/utils'
+import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 
 const nav = [
-  { href: "/app", label: "Home", icon: LayoutDashboard },
-  { href: "/app/boards", label: "Boards", icon: KanbanSquare },
-  { href: "/app/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/app/timeline", label: "Timeline", icon: GanttChart },
-];
+  { href: '/app', label: 'Home', icon: LayoutDashboard },
+  { href: '/app/boards', label: 'Boards', icon: KanbanSquare },
+  { href: '/app/calendar', label: 'Calendar', icon: CalendarDays },
+  { href: '/app/timeline', label: 'Timeline', icon: GanttChart }
+]
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { user, ready, logout } = useAuth();
-  const pathname = usePathname();
-  const router = useRouter();
+  const { user, ready, logout } = useAuth()
+  const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
-    if (ready && !user) router.replace("/login");
-  }, [ready, user, router]);
+    if (ready && !user) router.replace('/login')
+  }, [ready, user, router])
 
   if (!ready || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         Loading…
       </div>
-    );
+    )
   }
 
   return (
@@ -50,24 +44,22 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="flex flex-1 flex-col gap-0.5 px-2 py-2">
           {nav.map((item) => {
             const active =
-              item.href === "/app"
-                ? pathname === "/app"
-                : pathname.startsWith(item.href);
+              item.href === '/app' ? pathname === '/app' : pathname.startsWith(item.href)
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-2.5 py-2 text-sm",
+                  'flex items-center gap-2 rounded-md px-2.5 py-2 text-sm',
                   active
-                    ? "bg-muted font-medium text-foreground"
-                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
+                    ? 'bg-muted font-medium text-foreground'
+                    : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
                 )}
               >
                 <item.icon className="size-4" />
                 {item.label}
               </Link>
-            );
+            )
           })}
         </nav>
         <div className="border-t border-border p-3">
@@ -82,8 +74,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={() => {
-                logout();
-                router.replace("/");
+                logout()
+                router.replace('/')
               }}
               className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
               aria-label="Log out"
@@ -95,5 +87,5 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="min-w-0 flex-1">{children}</main>
     </div>
-  );
+  )
 }
