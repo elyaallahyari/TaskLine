@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   DndContext,
@@ -10,114 +10,138 @@ import {
   useSensors,
   type DragEndEvent,
   type DragOverEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
+  type DragStartEvent
+} from '@dnd-kit/core'
 import {
   SortableContext,
   arrayMove,
   horizontalListSortingStrategy,
   useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { MoreHorizontal, Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { api } from "@/lib/api";
-import type { Board, Column, Priority, Task } from "@/lib/types";
-import { priorityLabel } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { format } from 'date-fns'
+import { MoreHorizontal, Pencil, Plus } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import { api } from '@/lib/api'
+import type { Board, Column, Priority, Task } from '@/lib/types'
+import { priorityLabel } from '@/lib/types'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { TaskDialog } from "@/components/task-dialog";
-import { cn } from "@/lib/utils";
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { TaskDialog } from '@/components/task-dialog'
+import { cn } from '@/lib/utils'
+import { TaskDeleteButton, type OnTaskDeleted } from './task-delete-button'
 
-const priorityVariant: Record<Priority, "low" | "medium" | "high" | "urgent"> = {
-  LOW: "low",
-  MEDIUM: "medium",
-  HIGH: "high",
-  URGENT: "urgent",
-};
+const priorityVariant: Record<Priority, 'low' | 'medium' | 'high' | 'urgent'> = {
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  URGENT: 'urgent'
+}
 
-function TaskCard({
-  task,
-  onOpen,
-}: {
-  task: Task;
-  onOpen?: (task: Task) => void;
-}) {
+type TaskCardProps = {
+  task: Task
+  onOpen: (task: Task) => void
+  onDeleted: OnTaskDeleted
+  readOnly?: boolean
+}
+
+type SortableTaskProps = {
+  task: Task
+  onOpen: (task: Task) => void
+  onDeleted: OnTaskDeleted
+}
+
+type SortableColumnProps = {
+  column: Column
+  onAddTask: (columnId: string) => void
+  onOpenTask: (task: Task) => void
+  onDeleteTask: OnTaskDeleted
+  onRename: (column: Column) => void
+  onDelete: (column: Column) => void
+}
+
+function TaskCard({ task, onOpen, onDeleted, readOnly = false }: TaskCardProps) {
   return (
-    <button
-      type="button"
-      onClick={() => onOpen?.(task)}
-      className="w-full rounded-lg border border-border bg-background p-3 text-left shadow-sm hover:border-primary/30"
-    >
-      <p className="text-sm font-medium leading-5">{task.title}</p>
+    <div className="w-full rounded-lg border border-border bg-background p-3 text-left shadow-sm hover:border-primary/30">
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 flex-1 text-sm font-medium leading-5">{task.title}</p>
+        {!readOnly && (
+          <div
+            className="flex shrink-0 items-center gap-1"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              title="Edit task"
+              aria-label={`Edit ${task.title}`}
+              onClick={() => onOpen(task)}
+            >
+              <Pencil className="size-4" />
+            </Button>
+            <TaskDeleteButton taskId={task.id} taskTitle={task.title} onDeleted={onDeleted} />
+          </div>
+        )}
+      </div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        <Badge variant={priorityVariant[task.priority]}>
-          {priorityLabel[task.priority]}
-        </Badge>
+        <Badge variant={priorityVariant[task.priority]}>{priorityLabel[task.priority]}</Badge>
         {task.dueDate ? (
           <span className="text-[11px] text-muted-foreground">
-            {format(new Date(task.dueDate), "MMM d")}
+            {format(new Date(task.dueDate), 'MMM d')}
           </span>
         ) : null}
       </div>
-    </button>
-  );
+    </div>
+  )
 }
 
-function SortableTask({
-  task,
-  onOpen,
-}: {
-  task: Task;
-  onOpen: (task: Task) => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: task.id, data: { type: "task", task } });
+function SortableTask({ task, onOpen, onDeleted }: SortableTaskProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    data: { type: 'task', task }
+  })
 
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn(isDragging && "opacity-40")}
+      className={cn(isDragging && 'opacity-40')}
       {...attributes}
       {...listeners}
     >
-      <TaskCard task={task} onOpen={onOpen} />
+      <TaskCard task={task} onOpen={onOpen} onDeleted={onDeleted} />
     </div>
-  );
+  )
 }
 
 function SortableColumn({
   column,
   onAddTask,
   onOpenTask,
+  onDeleteTask,
   onRename,
-  onDelete,
-}: {
-  column: Column;
-  onAddTask: (columnId: string) => void;
-  onOpenTask: (task: Task) => void;
-  onRename: (column: Column) => void;
-  onDelete: (column: Column) => void;
-}) {
+  onDelete
+}: SortableColumnProps) {
   const { setNodeRef, attributes, listeners, transform, transition } = useSortable({
     id: column.id,
-    data: { type: "column", column },
-  });
+    data: { type: 'column', column }
+  })
   const { setNodeRef: setDropRef } = useDroppable({
     id: `drop-${column.id}`,
-    data: { type: "column-drop", columnId: column.id },
-  });
+    data: { type: 'column-drop', columnId: column.id }
+  })
 
   return (
     <div
@@ -140,13 +164,16 @@ function SortableColumn({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div ref={setDropRef} className="flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
+      <div
+        ref={setDropRef}
+        className="flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2"
+      >
         <SortableContext
           items={column.tasks.map((task) => task.id)}
           strategy={verticalListSortingStrategy}
         >
           {column.tasks.map((task) => (
-            <SortableTask key={task.id} task={task} onOpen={onOpenTask} />
+            <SortableTask key={task.id} task={task} onOpen={onOpenTask} onDeleted={onDeleteTask} />
           ))}
         </SortableContext>
         <Button
@@ -159,162 +186,179 @@ function SortableColumn({
         </Button>
       </div>
     </div>
-  );
+  )
 }
 
 export function BoardKanban({ board }: { board: Board }) {
-  const queryClient = useQueryClient();
-  const [columns, setColumns] = useState(board.columns);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const queryClient = useQueryClient()
+
+  // Sync props -> local state during render (React docs pattern).
+  // This replaces useEffect + setColumns and fixes the cascading-render warning.
+  const [columns, setColumns] = useState<Column[]>(board.columns)
+  const [prevBoardColumns, setPrevBoardColumns] = useState<Column[]>(board.columns)
+  if (board.columns !== prevBoardColumns) {
+    setPrevBoardColumns(board.columns)
+    setColumns(board.columns)
+  }
+
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
   const [dialog, setDialog] = useState<{ open: boolean; columnId?: string; task?: Task | null }>({
-    open: false,
-  });
-  const [newColumn, setNewColumn] = useState("");
+    open: false
+  })
+  const [newColumn, setNewColumn] = useState('')
 
-  useEffect(() => {
-    setColumns(board.columns);
-  }, [board.columns]);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-  );
-
-  const columnIds = useMemo(() => columns.map((column) => column.id), [columns]);
+  const columnIds = useMemo(() => columns.map((column) => column.id), [columns])
 
   const persistBoard = (next: Column[]) => {
-    queryClient.setQueryData(["board", board.id], { ...board, columns: next });
-  };
+    queryClient.setQueryData(['board', board.id], { ...board, columns: next })
+  }
+
+  const handleTaskDeleted: OnTaskDeleted = useCallback(
+    (deletedId: string) => {
+      setColumns((prev) => {
+        const next = prev.map((column) => ({
+          ...column,
+          tasks: column.tasks.filter((task) => task.id !== deletedId)
+        }))
+        queryClient.setQueryData(['board', board.id], { ...board, columns: next })
+        return next
+      })
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['board', board.id] })
+    },
+    [board, queryClient]
+  )
 
   const moveMutation = useMutation({
     mutationFn: (payload: { taskId: string; columnId: string; orderedTaskIds: string[] }) =>
       api(`/tasks/${payload.taskId}/move`, {
-        method: "PATCH",
+        method: 'PATCH',
         body: JSON.stringify({
           columnId: payload.columnId,
-          orderedTaskIds: payload.orderedTaskIds,
-        }),
+          orderedTaskIds: payload.orderedTaskIds
+        })
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["board", board.id] });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
+      queryClient.invalidateQueries({ queryKey: ['board', board.id] })
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    }
+  })
 
   const addColumn = useMutation({
     mutationFn: () =>
       api(`/boards/${board.id}/columns`, {
-        method: "POST",
-        body: JSON.stringify({ name: newColumn }),
+        method: 'POST',
+        body: JSON.stringify({ name: newColumn })
       }),
     onSuccess: () => {
-      setNewColumn("");
-      queryClient.invalidateQueries({ queryKey: ["board", board.id] });
-    },
-  });
+      setNewColumn('')
+      queryClient.invalidateQueries({ queryKey: ['board', board.id] })
+    }
+  })
 
   const renameColumn = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) =>
-      api(`/columns/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["board", board.id] }),
-  });
+      api(`/columns/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['board', board.id] })
+  })
 
   const deleteColumn = useMutation({
-    mutationFn: (id: string) => api(`/columns/${id}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["board", board.id] }),
-  });
+    mutationFn: (id: string) => api(`/columns/${id}`, { method: 'DELETE' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['board', board.id] })
+  })
 
   function findColumn(id: string) {
-    return columns.find(
-      (column) => column.id === id || column.tasks.some((task) => task.id === id),
-    );
+    return columns.find((column) => column.id === id || column.tasks.some((task) => task.id === id))
   }
 
   function onDragStart(event: DragStartEvent) {
-    if (event.active.data.current?.type === "task") {
-      setActiveTask(event.active.data.current.task as Task);
+    if (event.active.data.current?.type === 'task') {
+      setActiveTask(event.active.data.current.task as Task)
     }
   }
 
   function onDragOver(event: DragOverEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    if (active.data.current?.type !== "task") return;
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    if (active.data.current?.type !== 'task') return
 
-    const activeColumn = findColumn(String(active.id));
-    const overId = String(over.id).replace(/^drop-/, "");
-    const overColumn = findColumn(overId);
-    if (!activeColumn || !overColumn || activeColumn.id === overColumn.id) return;
+    const activeColumn = findColumn(String(active.id))
+    const overId = String(over.id).replace(/^drop-/, '')
+    const overColumn = findColumn(overId)
+    if (!activeColumn || !overColumn || activeColumn.id === overColumn.id) return
 
     setColumns((prev) => {
-      const from = prev.find((column) => column.id === activeColumn.id);
-      const to = prev.find((column) => column.id === overColumn.id);
-      if (!from || !to) return prev;
-      const task = from.tasks.find((item) => item.id === active.id);
-      if (!task) return prev;
-      const overIndex = to.tasks.findIndex((item) => item.id === overId);
-      const insertAt = overIndex === -1 ? to.tasks.length : overIndex;
+      const from = prev.find((column) => column.id === activeColumn.id)
+      const to = prev.find((column) => column.id === overColumn.id)
+      if (!from || !to) return prev
+      const task = from.tasks.find((item) => item.id === active.id)
+      if (!task) return prev
+      const overIndex = to.tasks.findIndex((item) => item.id === overId)
+      const insertAt = overIndex === -1 ? to.tasks.length : overIndex
       return prev.map((column) => {
         if (column.id === from.id) {
-          return { ...column, tasks: column.tasks.filter((item) => item.id !== task.id) };
+          return { ...column, tasks: column.tasks.filter((item) => item.id !== task.id) }
         }
         if (column.id === to.id) {
-          const next = [...column.tasks];
-          next.splice(insertAt, 0, { ...task, columnId: to.id });
-          return { ...column, tasks: next };
+          const next = [...column.tasks]
+          next.splice(insertAt, 0, { ...task, columnId: to.id })
+          return { ...column, tasks: next }
         }
-        return column;
-      });
-    });
+        return column
+      })
+    })
   }
 
   function onDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    setActiveTask(null);
+    const { active, over } = event
+    setActiveTask(null)
     if (!over) {
-      setColumns(board.columns);
-      return;
+      setColumns(board.columns)
+      return
     }
 
-    if (active.data.current?.type === "column") {
-      const oldIndex = columnIds.indexOf(String(active.id));
-      const newIndex = columnIds.indexOf(String(over.id).replace(/^drop-/, ""));
-      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
-      const nextIds = arrayMove(columnIds, oldIndex, newIndex);
-      const next = arrayMove(columns, oldIndex, newIndex);
-      setColumns(next);
-      persistBoard(next);
+    if (active.data.current?.type === 'column') {
+      const oldIndex = columnIds.indexOf(String(active.id))
+      const newIndex = columnIds.indexOf(String(over.id).replace(/^drop-/, ''))
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return
+      const nextIds = arrayMove(columnIds, oldIndex, newIndex)
+      const next = arrayMove(columns, oldIndex, newIndex)
+      setColumns(next)
+      persistBoard(next)
       api(`/boards/${board.id}/columns/reorder`, {
-        method: "PATCH",
-        body: JSON.stringify({ columnIds: nextIds }),
-      }).then(() => queryClient.invalidateQueries({ queryKey: ["board", board.id] }));
-      return;
+        method: 'PATCH',
+        body: JSON.stringify({ columnIds: nextIds })
+      }).then(() => queryClient.invalidateQueries({ queryKey: ['board', board.id] }))
+      return
     }
 
-    const column = findColumn(String(active.id));
-    if (!column) return;
-    const overId = String(over.id).replace(/^drop-/, "");
-    const overColumn = findColumn(overId) ?? column;
-    let next = columns;
+    const column = findColumn(String(active.id))
+    if (!column) return
+    const overId = String(over.id).replace(/^drop-/, '')
+    const overColumn = findColumn(overId) ?? column
+    let next = columns
     if (column.id === overColumn.id) {
-      const oldIndex = column.tasks.findIndex((task) => task.id === active.id);
-      const newIndex = column.tasks.findIndex((task) => task.id === overId);
+      const oldIndex = column.tasks.findIndex((task) => task.id === active.id)
+      const newIndex = column.tasks.findIndex((task) => task.id === overId)
       if (oldIndex >= 0 && newIndex >= 0 && oldIndex !== newIndex) {
         next = columns.map((item) =>
           item.id === column.id
             ? { ...item, tasks: arrayMove(item.tasks, oldIndex, newIndex) }
-            : item,
-        );
-        setColumns(next);
+            : item
+        )
+        setColumns(next)
       }
     }
-    persistBoard(next);
-    const target = next.find((item) => item.tasks.some((task) => task.id === active.id));
-    if (!target) return;
+    persistBoard(next)
+    const target = next.find((item) => item.tasks.some((task) => task.id === active.id))
+    if (!target) return
     moveMutation.mutate({
       taskId: String(active.id),
       columnId: target.id,
-      orderedTaskIds: target.tasks.map((task) => task.id),
-    });
+      orderedTaskIds: target.tasks.map((task) => task.id)
+    })
   }
 
   return (
@@ -333,16 +377,15 @@ export function BoardKanban({ board }: { board: Board }) {
                 key={column.id}
                 column={column}
                 onAddTask={(columnId) => setDialog({ open: true, columnId })}
-                onOpenTask={(task) =>
-                  setDialog({ open: true, columnId: task.columnId, task })
-                }
+                onOpenTask={(task) => setDialog({ open: true, columnId: task.columnId, task })}
+                onDeleteTask={handleTaskDeleted}
                 onRename={(item) => {
-                  const name = window.prompt("Column name", item.name);
-                  if (name) renameColumn.mutate({ id: item.id, name });
+                  const name = window.prompt('Column name', item.name)
+                  if (name) renameColumn.mutate({ id: item.id, name })
                 }}
                 onDelete={(item) => {
-                  if (window.confirm(`Delete “${item.name}” and its tasks?`)) {
-                    deleteColumn.mutate(item.id);
+                  if (window.confirm(`Delete "${item.name}" and its tasks?`)) {
+                    deleteColumn.mutate(item.id)
                   }
                 }}
               />
@@ -351,8 +394,8 @@ export function BoardKanban({ board }: { board: Board }) {
           <form
             className="flex h-fit w-72 shrink-0 gap-2 rounded-xl border border-dashed border-border bg-background p-2"
             onSubmit={(event) => {
-              event.preventDefault();
-              if (newColumn.trim()) addColumn.mutate();
+              event.preventDefault()
+              if (newColumn.trim()) addColumn.mutate()
             }}
           >
             <Input
@@ -366,7 +409,9 @@ export function BoardKanban({ board }: { board: Board }) {
           </form>
         </div>
         <DragOverlay>
-          {activeTask ? <TaskCard task={activeTask} /> : null}
+          {activeTask ? (
+            <TaskCard task={activeTask} onOpen={() => {}} onDeleted={() => {}} readOnly />
+          ) : null}
         </DragOverlay>
       </DndContext>
       <TaskDialog
@@ -377,5 +422,5 @@ export function BoardKanban({ board }: { board: Board }) {
         task={dialog.task}
       />
     </>
-  );
+  )
 }
