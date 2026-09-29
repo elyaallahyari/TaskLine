@@ -8,14 +8,50 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth'
+import { toast } from 'sonner'
+import { getApiErrorMessage, MESSAGES } from '@/lib/api-error'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const router = useRouter()
   const [email, setEmail] = useState('demo@taskline.app')
   const [password, setPassword] = useState('demo1234')
-  const [error, setError] = useState('')
-  const [pending, setPending] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email || !password) {
+      toast.error('Please enter your email and password.')
+      return
+    }
+
+    setLoading(true)
+    const toastId = toast.loading('Logging you in...')
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw { response: { status: res.status, data } }
+      }
+
+      const data = await res.json()
+      localStorage.setItem('token', data.access_token)
+
+      toast.success(MESSAGES.LOGIN_SUCCESS, { id: toastId })
+      router.push('/app')
+    } catch (err) {
+      const message = getApiErrorMessage(err, 'Login failed. Please try again.')
+      toast.error(message, { id: toastId })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
@@ -24,19 +60,7 @@ export default function LoginPage() {
       </Link>
       <form
         className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6"
-        onSubmit={async (event) => {
-          event.preventDefault()
-          setPending(true)
-          setError('')
-          try {
-            await login(email, password)
-            router.push('/app')
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Could not log in')
-          } finally {
-            setPending(false)
-          }
-        }}
+        onSubmit={handleLogin}
       >
         <div>
           <h1 className="text-lg font-semibold">Welcome back</h1>
@@ -63,9 +87,8 @@ export default function LoginPage() {
             minLength={8}
           />
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button className="w-full" type="submit" disabled={pending}>
-          {pending ? 'Signing in…' : 'Log in'}
+        <Button className="w-full" type="submit" disabled={loading}>
+          {loading ? 'Please wait...' : 'Log in'}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
           No account?{' '}
