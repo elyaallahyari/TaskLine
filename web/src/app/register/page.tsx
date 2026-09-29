@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth'
+import { toast } from 'sonner'
+import { getApiErrorMessage, MESSAGES } from '@/lib/api-error'
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -15,8 +17,42 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [pending, setPending] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  async function handleRegister(e: React.FormEvent) {
+    e.preventDefault()
+    if (password.length < 8) {
+      toast.error(MESSAGES.WEAK_PASSWORD)
+      return
+    }
+
+    setLoading(true)
+    const toastId = toast.loading('Creating your account...')
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw { response: { status: res.status, data } }
+      }
+
+      const data = await res.json()
+      localStorage.setItem('token', data.access_token)
+
+      toast.success(MESSAGES.REGISTER_SUCCESS, { id: toastId })
+      router.push('/app')
+    } catch (err) {
+      const message = getApiErrorMessage(err, 'Registration failed. Please try again.')
+      toast.error(message, { id: toastId })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
@@ -25,19 +61,7 @@ export default function RegisterPage() {
       </Link>
       <form
         className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6"
-        onSubmit={async (event) => {
-          event.preventDefault()
-          setPending(true)
-          setError('')
-          try {
-            await register(name, email, password)
-            router.push('/app')
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Could not register')
-          } finally {
-            setPending(false)
-          }
-        }}
+        onSubmit={handleRegister}
       >
         <div>
           <h1 className="text-lg font-semibold">Create TaskLine</h1>
@@ -74,9 +98,9 @@ export default function RegisterPage() {
             minLength={8}
           />
         </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-        <Button className="w-full" type="submit" disabled={pending}>
-          {pending ? 'Creating…' : 'Get started'}
+
+        <Button className="w-full" type="submit" disabled={loading}>
+          {loading ? 'Please wait...' : 'Create account'}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
           Already here?{' '}
