@@ -19,9 +19,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { toast } from 'sonner'
+import { getApiErrorMessage, MESSAGES } from '@/lib/api-error'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const router = useRouter()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -56,6 +61,37 @@ export default function DashboardPage() {
     .filter((task) => task.dueDate)
     .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
     .slice(0, 6)
+
+  useEffect(() => {
+    async function loadDashboard() {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) {
+          toast.error(MESSAGES.UNAUTHORIZED)
+          router.push('/login')
+          return
+        }
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tasks`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        if (res.status === 401) {
+          toast.error(MESSAGES.UNAUTHORIZED)
+          router.push('/login')
+          return
+        }
+
+        if (!res.ok) throw { response: { status: res.status } }
+
+        // setTasks(await res.json());
+      } catch (err) {
+        toast.error(getApiErrorMessage(err, MESSAGES.DASHBOARD_LOAD_ERROR))
+      }
+    }
+
+    loadDashboard()
+  }, [router])
 
   return (
     <div className="mx-auto max-w-5xl px-8 py-8">
