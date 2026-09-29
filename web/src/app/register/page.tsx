@@ -3,12 +3,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth'
-import { toast } from 'sonner'
 import { getApiErrorMessage, MESSAGES } from '@/lib/api-error'
 
 export default function RegisterPage() {
@@ -21,6 +21,14 @@ export default function RegisterPage() {
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
+    if (!name.trim() || !email.trim() || !password) {
+      toast.error('Please fill in all fields.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error(MESSAGES.INVALID_EMAIL)
+      return
+    }
     if (password.length < 8) {
       toast.error(MESSAGES.WEAK_PASSWORD)
       return
@@ -28,27 +36,15 @@ export default function RegisterPage() {
 
     setLoading(true)
     const toastId = toast.loading('Creating your account...')
-
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw { response: { status: res.status, data } }
-      }
-
-      const data = await res.json()
-      localStorage.setItem('token', data.access_token)
-
+      await register(name.trim(), email.trim(), password)
       toast.success(MESSAGES.REGISTER_SUCCESS, { id: toastId })
       router.push('/app')
     } catch (err) {
-      const message = getApiErrorMessage(err, 'Registration failed. Please try again.')
-      toast.error(message, { id: toastId })
+      console.error(err)
+      toast.error(getApiErrorMessage(err, 'Registration failed. Please try again.'), {
+        id: toastId
+      })
     } finally {
       setLoading(false)
     }
@@ -64,18 +60,12 @@ export default function RegisterPage() {
         onSubmit={handleRegister}
       >
         <div>
-          <h1 className="text-lg font-semibold">Create TaskLine</h1>
-          <p className="text-sm text-muted-foreground">Your boards start empty and quiet.</p>
+          <h1 className="text-lg font-semibold">Create account</h1>
+          <p className="text-sm text-muted-foreground">Start your workspace.</p>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            minLength={2}
-          />
+          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
@@ -98,12 +88,11 @@ export default function RegisterPage() {
             minLength={8}
           />
         </div>
-
         <Button className="w-full" type="submit" disabled={loading}>
           {loading ? 'Please wait...' : 'Create account'}
         </Button>
         <p className="text-center text-sm text-muted-foreground">
-          Already here?{' '}
+          Have an account?{' '}
           <Link href="/login" className="text-foreground underline">
             Log in
           </Link>

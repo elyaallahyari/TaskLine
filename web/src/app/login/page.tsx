@@ -3,12 +3,12 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth'
-import { toast } from 'sonner'
 import { getApiErrorMessage, MESSAGES } from '@/lib/api-error'
 
 export default function LoginPage() {
@@ -20,34 +20,25 @@ export default function LoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    if (!email || !password) {
-      toast.error('Please enter your email and password.')
+    if (!email.trim() || !password) {
+      toast.error(MESSAGES.REQUIRED_FIELDS)
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error(MESSAGES.INVALID_EMAIL)
       return
     }
 
     setLoading(true)
     const toastId = toast.loading('Logging you in...')
-
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw { response: { status: res.status, data } }
-      }
-
-      const data = await res.json()
-      localStorage.setItem('token', data.access_token)
-
+      await login(email.trim(), password)
       toast.success(MESSAGES.LOGIN_SUCCESS, { id: toastId })
       router.push('/app')
-    } catch (err) {
-      const message = getApiErrorMessage(err, 'Login failed. Please try again.')
-      toast.error(message, { id: toastId })
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, 'Login failed. Please try again.'), {
+        id: toastId
+      })
     } finally {
       setLoading(false)
     }

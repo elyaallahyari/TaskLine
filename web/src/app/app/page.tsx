@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
 import type { BoardSummary, Task } from '@/lib/types'
@@ -19,18 +19,45 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { getApiErrorMessage, MESSAGES } from '@/lib/api-error'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 
 export default function DashboardPage() {
-  const { user } = useAuth()
-  const router = useRouter()
+  const { user, loading, logout } = useAuth()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login')
+    }
+  }, [loading, user, router])
+
+  useEffect(() => {
+    if (loading || !user) return
+
+    async function load() {
+      try {
+        const tasks = await api('/tasks', { method: 'GET' })
+        // setTasks(tasks)
+      } catch (err) {
+        // Real expire: backend said 401
+        console.log(err)
+        if (err === 401) {
+          toast.error(MESSAGES.UNAUTHORIZED)
+          logout()
+          router.push('/login')
+          return
+        }
+        toast.error(getApiErrorMessage(err, MESSAGES.DASHBOARD_LOAD_ERROR))
+      }
+    }
+    load()
+  }, [loading, user, router, logout])
 
   const boards = useQuery({
     queryKey: ['boards'],
@@ -62,36 +89,8 @@ export default function DashboardPage() {
     .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
     .slice(0, 6)
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        const token = localStorage.getItem('token')
-        if (!token) {
-          toast.error(MESSAGES.UNAUTHORIZED)
-          router.push('/login')
-          return
-        }
-
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/tasks`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-
-        if (res.status === 401) {
-          toast.error(MESSAGES.UNAUTHORIZED)
-          router.push('/login')
-          return
-        }
-
-        if (!res.ok) throw { response: { status: res.status } }
-
-        // setTasks(await res.json());
-      } catch (err) {
-        toast.error(getApiErrorMessage(err, MESSAGES.DASHBOARD_LOAD_ERROR))
-      }
-    }
-
-    loadDashboard()
-  }, [router])
+  if (loading) return <div className="p-8">Loading...</div>
+  if (!user) return null
 
   return (
     <div className="mx-auto max-w-5xl px-8 py-8">
