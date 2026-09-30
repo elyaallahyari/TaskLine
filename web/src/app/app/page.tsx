@@ -45,8 +45,6 @@ export default function DashboardPage() {
         const tasks = await api('/tasks', { method: 'GET' })
         // setTasks(tasks)
       } catch (err) {
-        // Real expire: backend said 401
-        console.log(err)
         if (err === 401) {
           toast.error(MESSAGES.UNAUTHORIZED)
           logout()
