@@ -11,7 +11,7 @@ async function main() {
     update: {},
     create: {
       email: 'demo@taskline.app',
-      name: 'Elya',
+      name: 'Darling',
       password,
     },
   });
@@ -60,7 +60,8 @@ async function main() {
   }> = [
     {
       title: 'Design landing page',
-      description: 'Minimal hero, product preview, and a clear get-started path.',
+      description:
+        'Minimal hero, product preview, and a clear get-started path.',
       priority: 'HIGH',
       columnId: done.id,
       order: 0,
